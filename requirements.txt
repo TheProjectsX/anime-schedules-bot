@@ -1,0 +1,3 @@
+anime-schedules @ git+https://github.com/TheProjectsX/anime-schedules.git@ebd82816b5cf3b0a66f4288c81404aa08ca10049
+python-dotenv==1.0.1
+python-telegram-bot==21.6

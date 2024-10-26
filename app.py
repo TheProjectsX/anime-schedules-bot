@@ -8,20 +8,17 @@ from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
-    MessageHandler,
-    filters,
     ContextTypes,
 )
 import anime_schedules as anis
-
 import dotenv
 
 dotenv.load_dotenv(".env")
 
+
 # Global Variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 BOT_USERNAME = ""
-
 
 ### Utility Functions ###
 
@@ -65,7 +62,7 @@ async def timeoutWrapper(
 
 # Escape Safe Characters
 def escapeMarkdownV2(text: str) -> str:
-    specialCharacters = r"\[\]()~>#+-=|{}.!"
+    specialCharacters = r"\[\]()~>#+-=|{}.!_"
     escapedText = re.sub(f"([{re.escape(specialCharacters)}])", r"\\\1", text)
 
     return escapedText
@@ -94,12 +91,10 @@ def getAnimeInfoFormatted(data):
         hours, remainder = divmod(seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        publishTime = f"**`{futureTime.strftime("%b %d, %Y")}`** at **`{futureTime.strftime("%I:%M %p")}`**"
-        timeLeft = (
-            f"**`{f"{days} D " if days > 0 else ""}{hours}H {minutes}M {seconds}S`**"
-        )
+        publishTime = f"**`{futureTime.strftime('%b %d, %Y')}`** at **`{futureTime.strftime('%I:%M %p')}`**"
+        timeLeft = f"**`{(str(days) + 'D ') if days > 0 else ''}{hours}H {minutes}M {seconds}S`**"
 
-    message = f"""**`{data.get("title")}`
+    message = f"""**`{data.get('title')}`
 **Episode No: *{formatNumber(data.get("next", {}).get("episode"))}*
 Publish Time: {publishTime}
 Time Left: {timeLeft}"""
@@ -130,12 +125,55 @@ async def sendReply(
 
 # Start Command
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("""Get Anime Schedules Information Easily!""")
+    await update.message.reply_text(
+        escapeMarkdownV2(
+            """*Welcome to the Anime Schedule Bot! 🎉*
+
+I'm here to help you stay updated with all your favorite anime schedules. Here’s what I can do:
+
+- /anime_today: Get the schedule for anime airing today.
+- /next_24_hours: Find out what anime is scheduled in the next 24 hours.
+- /current_season: View all anime scheduled for the current season.
+- /season [season_name] [year]: Check anime schedules for a specific season.
+
+Just type the command you want to use, and let's dive into the world of anime! If you need assistance, type /help for more options. Enjoy! 🌟
+"""
+        ),
+        parse_mode="MarkdownV2",
+    )
 
 
 # Help Command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("""Some Help in here""")
+    await update.message.reply_text(
+        escapeMarkdownV2(
+            """📚 **Help Menu**
+
+Here are the commands you can use with this bot:
+
+1. **/start** - Start the Bot
+   - Begin your interaction with the bot and receive a warm welcome!
+
+2. **/help** - Get Help
+   - Display this help message with a list of available commands.
+
+3. **/anime_today** - Anime Schedule of Today
+   - Get the schedule of anime that will be airing today, until 12 AM.
+
+4. **/next_24_hours** - Get Anime Schedule of Next 24 Hours
+   - Receive a list of anime that will be airing in the next 24 hours!
+
+5. **/current_season** - Get Anime Scheduled for Current Season
+   - Retrieve a complete list of anime scheduled to air in the current season.
+
+6. **/season [season_name] [year]** - Get Anime Scheduled for Given Season
+   - Specify a season (e.g., "Spring", "Summer", "Fall", "Winter") and a year to get all anime scheduled for that season.
+
+Feel free to use these commands to explore anime schedules! 🎉
+"""
+        ),
+        parse_mode="MarkdownV2",
+    )
 
 
 # Anime Schedule of Today
@@ -152,10 +190,11 @@ async def anime_today_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         message = getAnimeInfoFormatted(data)
         messages.append(message)
 
+    joinedMessages = "\n\n".join(messages)
     response_message = f"""__*Anime Schedule*__
 Here are the Anime scheduled today (till 12AM)!
 
-{"\n\n".join(messages)}"""
+{joinedMessages}"""
 
     await update.message.reply_text(
         escapeMarkdownV2(response_message), parse_mode="MarkdownV2"
@@ -171,10 +210,11 @@ async def next_24_hours_command(update: Update, context: ContextTypes.DEFAULT_TY
         message = getAnimeInfoFormatted(data)
         messages.append(message)
 
+    joinedMessages = "\n\n".join(messages)
     response_message = f"""__*Anime Schedule*__
 Here are the Anime in next 24 Hours!
 
-{"\n\n".join(messages)}"""
+{joinedMessages}"""
 
     await update.message.reply_text(
         escapeMarkdownV2(response_message), parse_mode="MarkdownV2"
@@ -218,7 +258,7 @@ async def anime_by_season_command(update: Update, context: ContextTypes.DEFAULT_
     if not validation.get("valid"):
         await update.message.reply_text(
             escapeMarkdownV2(
-                f"{validation.get("message")}\n\nExample: **`/season fall 2024`**"
+                f"{validation.get('message')}\n\nExample: **`/season fall 2024`**"
             ),
             parse_mode="MarkdownV2",
         )
@@ -246,10 +286,20 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # START APP
-def start(app):
+def setup_app(app):
     # Commands
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(
+        CommandHandler(
+            "start",
+            lambda update, context: timeoutWrapper(start_command, update, context),
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            "help",
+            lambda update, context: timeoutWrapper(help_command, update, context),
+        )
+    )
     app.add_handler(
         CommandHandler(
             "anime_today",
@@ -283,18 +333,15 @@ def start(app):
         )
     )
 
-    print("Pooling...")
-    app.run_polling(poll_interval=3, timeout=60)
+    # Error Handler
+    app.add_error_handler(error)
 
 
 if __name__ == "__main__":
+    app = Application.builder().token(BOT_TOKEN).build()
 
-    try:
-        print("Starting...")
-        app = Application.builder().token(BOT_TOKEN).build()
-        start(app=app)
-    except telegram.error.TimedOut:
-        print("Restarting...")
-        time.sleep(4)
-        app = Application.builder().token(BOT_TOKEN).build()
-        start(app=app)
+    print("Starting...")
+    setup_app(app)
+
+    print("Pooling...")
+    app.run_polling()
