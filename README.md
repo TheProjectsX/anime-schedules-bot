@@ -21,3 +21,12 @@ https://t.me/anime_schedulesbot
 pip install -r requirements.txt
 python app.py
 ```
+
+### FUTURE Note:
+
+**How I Hosted the Bot for Free**
+
+-   Created a Flask server with all the module/api requests
+-   Created a separate script to handle telegram bot requests and Server API
+-   Hosted SERVER APP (flask) in the vercel
+-   Hosted Bot Script at [https://pella.app/](https://pella.app/)

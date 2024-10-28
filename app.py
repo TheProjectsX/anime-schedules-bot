@@ -10,8 +10,8 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
 )
-import anime_schedules as anis
 import dotenv
+import anime_schedules as anis
 
 dotenv.load_dotenv(".env")
 
