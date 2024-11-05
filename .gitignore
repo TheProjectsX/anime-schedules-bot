@@ -2,3 +2,5 @@
 .env
 .vercel
 flask-vercel
+temp.txt
+.gitignore
