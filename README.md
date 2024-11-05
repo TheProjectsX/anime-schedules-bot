@@ -30,3 +30,12 @@ python app.py
 -   Created a separate script to handle telegram bot requests and Server API
 -   Hosted SERVER APP (flask) in the vercel
 -   Hosted Bot Script at [https://pella.app/](https://pella.app/)
+
+**Update**::
+
+-   Instead of the above technic, which caused so much time, We tried another method!
+-   Create a basic Flask application
+-   Create the bot File in same directory
+    -   Remove `__name__ == "__main__"` and directly start the pooling
+-   Import the Telegram Bot file in Flask
+-   Done!
